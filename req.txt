@@ -2,3 +2,9 @@ python-dotenv
 PyNaCl
 torch
 transformers
+fastapi
+uvicorn[standard]
+pydantic
+websockets
+pytest
+pytest-asyncio

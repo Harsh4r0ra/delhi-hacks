@@ -5,7 +5,7 @@ import datetime
 from typing import List, Dict, Any
 
 from dotenv import load_dotenv
-from nacl.signing import SigningKey, VerifyKey
+from nacl.signing import SigningKey
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -23,53 +23,92 @@ AGENT_MODELS = {
     "agent_4": os.getenv("AGENT_4_MODEL"),
 }
 
+SYSTEM_PROMPT = """You are an autonomous verification agent in a Byzantine Fault Tolerant AI system.
+
+CRITICAL RULES (NON-NEGOTIABLE):
+1. You MUST output ONLY valid JSON.
+2. You MUST follow the exact schema provided.
+3. You MUST NOT explain reasoning.
+4. You MUST NOT add extra text, markdown, or comments.
+5. If ANY uncertainty, ambiguity, missing data, or safety concern exists -> decision MUST be "REJECT".
+6. You MUST NOT assume intent.
+7. You MUST NOT optimize, suggest, or help.
+
+This system is FAIL-CLOSED.
+Any deviation = REJECT."""
+
+
+def build_task_prompt(action_id: str, user_request_json: str) -> str:
+    return f"""ACTION_ID: {action_id}
+
+USER_REQUEST (JSON):
+{user_request_json}
+
+REQUIRED OUTPUT FORMAT (STRICT JSON ONLY):
+{{
+  "action_id": "{action_id}",
+  "decision": "APPROVE" | "REJECT",
+  "reason_code": "SAFE" | "INVALID_REQUEST" | "UNSAFE_OR_UNKNOWN",
+  "confidence": number between 0.0 and 1.0
+}}
+
+EVALUATION INSTRUCTIONS:
+- Validate that USER_REQUEST is valid JSON.
+- If required fields are missing -> REJECT.
+- If the action is not explicitly safe -> REJECT.
+- APPROVE only if the request is clearly safe with no ambiguity.
+- Confidence must reflect certainty."""
+
+
 # =========================================================
 # UTILS
 # =========================================================
 def canonical_json(data: Dict[str, Any]) -> str:
     return json.dumps(data, sort_keys=True, separators=(",", ":"))
 
+
 def sha256(s: str) -> str:
     return hashlib.sha256(s.encode()).hexdigest()
+
 
 # =========================================================
 # HF MODEL WRAPPER
 # =========================================================
 class HFModel:
     def __init__(self, model_id: str):
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_id, token=HF_TOKEN
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(model_id, token=HF_TOKEN)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_id,
             token=HF_TOKEN,
             torch_dtype=torch.float32,
-            device_map="cpu"
+            device_map="cpu",
         )
 
-    def run(self, prompt: str) -> Dict[str, Any]:
+    def run(self, system_prompt: str, task_prompt: str) -> Dict[str, Any]:
+        prompt = f"{system_prompt}\n\n{task_prompt}"
         inputs = self.tokenizer(prompt, return_tensors="pt")
         with torch.no_grad():
             output = self.model.generate(
                 **inputs,
                 max_new_tokens=200,
-                do_sample=False
+                do_sample=False,
             )
 
-        text = self.tokenizer.decode(output[0], skip_special_tokens=True)
+        prompt_tokens = inputs["input_ids"].shape[1]
+        generated_tokens = output[0][prompt_tokens:]
+        text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
 
-        # STRICT FAIL-CLOSED PARSING
         try:
             json_start = text.index("{")
             json_end = text.rindex("}") + 1
-            parsed = json.loads(text[json_start:json_end])
-            return parsed
+            return json.loads(text[json_start:json_end])
         except Exception:
             return {
                 "decision": "REJECT",
-                "reason_code": "INVALID_MODEL_OUTPUT",
-                "confidence": 0.0
+                "reason_code": "UNSAFE_OR_UNKNOWN",
+                "confidence": 0.0,
             }
+
 
 # =========================================================
 # AGENT
@@ -82,42 +121,30 @@ class Agent:
         self.model = HFModel(model_id)
 
     def decide(self, action_id: str, user_request: Dict[str, Any]) -> Dict[str, Any]:
-        prompt = f"""
-You are a Byzantine verification agent.
+        user_request_json = json.dumps(user_request)
+        task_prompt = build_task_prompt(action_id, user_request_json)
+        result = self.model.run(SYSTEM_PROMPT, task_prompt)
 
-RULES:
-- Output ONLY valid JSON
-- No explanations
-- If uncertain → REJECT
-
-FORMAT:
-{{
-  "action_id": "{action_id}",
-  "decision": "APPROVE" | "REJECT",
-  "reason_code": "SAFE" | "INVALID_REQUEST" | "UNSAFE_OR_UNKNOWN",
-  "confidence": number
-}}
-
-USER_REQUEST:
-{json.dumps(user_request)}
-"""
-        result = self.model.run(prompt)
-
-        # Enforce schema strictly
         if (
             not isinstance(result, dict)
+            or result.get("action_id") != action_id
             or result.get("decision") not in {"APPROVE", "REJECT"}
+            or result.get("reason_code")
+            not in {"SAFE", "INVALID_REQUEST", "UNSAFE_OR_UNKNOWN"}
             or "confidence" not in result
+            or not isinstance(result["confidence"], (int, float))
+            or not (0.0 <= float(result["confidence"]) <= 1.0)
         ):
             return {
                 "action_id": action_id,
                 "decision": "REJECT",
-                "reason_code": "SCHEMA_VIOLATION",
-                "confidence": 0.0
+                "reason_code": "UNSAFE_OR_UNKNOWN",
+                "confidence": 0.0,
             }
 
-        result["action_id"] = action_id
+        result["confidence"] = float(result["confidence"])
         return result
+
 
 # =========================================================
 # BYZANTINE CONSENSUS
@@ -144,6 +171,7 @@ class ByzantineConsensus:
             "signatures": [g["signature"] for g in group],
         }
 
+
 # =========================================================
 # ORCHESTRATION
 # =========================================================
@@ -163,23 +191,21 @@ def byzantine_mind_orchestrate(
         h = sha256(canonical)
         sig = agent.signing_key.sign(h.encode()).signature.hex()
 
-        responses.append({
-            "agent_id": agent.agent_id,
-            "decision": output["decision"],
-            "canonical": canonical,
-            "hash": h,
-            "signature": sig,
-            "verify_key": agent.verify_key
-        })
+        responses.append(
+            {
+                "agent_id": agent.agent_id,
+                "decision": output["decision"],
+                "canonical": canonical,
+                "hash": h,
+                "signature": sig,
+                "verify_key": agent.verify_key,
+            }
+        )
 
-    # Verify signatures
     verified = []
     for r in responses:
         try:
-            r["verify_key"].verify(
-                r["hash"].encode(),
-                bytes.fromhex(r["signature"])
-            )
+            r["verify_key"].verify(r["hash"].encode(), bytes.fromhex(r["signature"]))
             verified.append(r)
         except Exception:
             pass

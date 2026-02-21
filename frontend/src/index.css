@@ -1,0 +1,188 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 224 47% 7%;
+    --foreground: 210 40% 92%;
+
+    --card: 224 40% 10%;
+    --card-foreground: 210 40% 92%;
+
+    --popover: 224 40% 10%;
+    --popover-foreground: 210 40% 92%;
+
+    --primary: 142 71% 45%;
+    --primary-foreground: 224 47% 7%;
+
+    --secondary: 224 30% 15%;
+    --secondary-foreground: 210 40% 85%;
+
+    --muted: 224 25% 14%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 224 30% 18%;
+    --accent-foreground: 210 40% 92%;
+
+    --destructive: 349 100% 62%;
+    --destructive-foreground: 210 40% 98%;
+
+    --warning: 43 100% 50%;
+    --warning-foreground: 224 47% 7%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 210 40% 98%;
+
+    --border: 224 20% 18%;
+    --input: 224 20% 18%;
+    --ring: 142 71% 45%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 224 40% 8%;
+    --sidebar-foreground: 210 40% 85%;
+    --sidebar-primary: 142 71% 45%;
+    --sidebar-primary-foreground: 224 47% 7%;
+    --sidebar-accent: 224 30% 15%;
+    --sidebar-accent-foreground: 210 40% 92%;
+    --sidebar-border: 224 20% 18%;
+    --sidebar-ring: 142 71% 45%;
+
+    --glass-bg: 224 40% 12%;
+    --glass-border: 142 71% 45%;
+    --green-glow: 142 71% 45%;
+    --red-glow: 349 100% 62%;
+    --amber-glow: 43 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .font-mono-code {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .glass-card {
+    @apply relative overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl;
+  }
+
+  .glass-card-active {
+    @apply glass-card;
+    border-color: hsl(var(--green-glow) / 0.3);
+    box-shadow: 0 0 20px hsl(var(--green-glow) / 0.08), inset 0 1px 0 hsl(var(--green-glow) / 0.1);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 20px hsl(var(--green-glow) / 0.3), 0 0 60px hsl(var(--green-glow) / 0.1);
+  }
+
+  .glow-red {
+    box-shadow: 0 0 20px hsl(var(--red-glow) / 0.3), 0 0 60px hsl(var(--red-glow) / 0.1);
+  }
+
+  .glow-amber {
+    box-shadow: 0 0 20px hsl(var(--amber-glow) / 0.3), 0 0 60px hsl(var(--amber-glow) / 0.1);
+  }
+
+  .text-gradient-green {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(142 71% 45%), hsl(160 84% 39%));
+  }
+
+  .text-gradient-hero {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(0 0% 100%), hsl(142 71% 55%));
+  }
+}
+
+/* Breathing animation for healthy agents */
+@keyframes breathe {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Glitch effect for faulty agents */
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+@keyframes glitch-skew {
+  0% { transform: skew(0deg); }
+  20% { transform: skew(-1deg); }
+  40% { transform: skew(0.5deg); }
+  60% { transform: skew(-0.5deg); }
+  80% { transform: skew(1deg); }
+  100% { transform: skew(0deg); }
+}
+
+/* Pulse glow for status indicators */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+
+/* Liquid fill animation */
+@keyframes liquid-fill {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
+
+/* Cascade glow for pipeline */
+@keyframes cascade-glow {
+  0% { opacity: 0.2; box-shadow: none; }
+  50% { opacity: 1; box-shadow: 0 0 30px hsl(var(--green-glow) / 0.4); }
+  100% { opacity: 1; box-shadow: 0 0 15px hsl(var(--green-glow) / 0.2); }
+}
+
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.animate-glitch {
+  animation: glitch 0.3s ease-in-out infinite, glitch-skew 0.5s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-cascade-glow {
+  animation: cascade-glow 0.8s ease-out forwards;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}

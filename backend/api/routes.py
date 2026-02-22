@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
 
 from backend.config import MODE, F_FAULTS, N_AGENTS
-from backend.agents.simulated_agent import SimulatedAgent
+from backend.agents.factory import create_agents
 from backend.armoriq.intent_engine import IntentEngine
 from backend.armoriq.gatekeeper import Gatekeeper
 from backend.armoriq.sentry import Sentry
@@ -33,14 +33,21 @@ router = APIRouter(prefix="/api")
 # ── Global State ──────────────────────────────────────────────────
 # These are initialized once when the server starts and shared across requests.
 
-agents = [SimulatedAgent(f"agent_{i+1}") for i in range(N_AGENTS)]
+agents = create_agents(MODE)
 registry = Registry()
 auditor = Auditor(db_path="audit.db")
 injector = FaultInjector()
 
+# Agent model labels for the registry
+_MODEL_LABELS = {
+    "agent_1": "Mistral (mistral-small-latest)" if MODE == "full" else "SimulatedAgent",
+    "agent_2": "Groq (llama-3.3-70b-versatile)" if MODE == "full" else "SimulatedAgent",
+    "agent_3": "Gemini (gemini-2.0-flash)" if MODE == "full" else "SimulatedAgent",
+    "agent_4": "Cerebras (llama-3.3-70b)" if MODE == "full" else "SimulatedAgent",
+}
+
 for agent in agents:
-    model_label = "SimulatedAgent" if MODE == "fast" else "HFAgent"
-    registry.register_agent(agent.agent_id, model_label)
+    registry.register_agent(agent.agent_id, _MODEL_LABELS.get(agent.agent_id, "Unknown"))
 
 
 # ── Request / Response Models ─────────────────────────────────────

@@ -68,6 +68,22 @@ class ConsensusEngine:
         except Exception:
             pass
 
+    async def _attempt_view_change(self, reason: str, seq: int) -> BaseAgent:
+        """Increment view and elect new primary."""
+        old_view = self.view_number
+        self.view_number += 1
+        new_primary = self.agents[self.view_number % self.n]
+        logger.warning(f"[Round {seq}] VIEW CHANGE: {old_view}→{self.view_number}. Reason: {reason}. New primary: {new_primary.agent_id}")
+        self._emit("view_change", {
+            "old_view": old_view,
+            "new_view": self.view_number,
+            "new_primary": new_primary.agent_id,
+            "reason": reason,
+            "sequence": seq,
+        })
+        await asyncio.sleep(0.5)  # brief stabilization pause
+        return new_primary
+
     async def submit_request(
         self, action_id: str, request: Dict[str, Any]
     ) -> Tuple[Optional[Dict[str, Any]], Optional[ConsensusCertificate], ConsensusRound]:
@@ -90,51 +106,79 @@ class ConsensusEngine:
 
         primary_agent = self.agents[view % self.n]
 
-        # ── PHASE 0: AGENT EXECUTION ──────────────────────────────────
-        logger.info(f"[Round {seq}] Phase 0: Querying {self.n} agents...")
-        self._emit("phase_update", {"phase": "AGENT_EXECUTION", "sequence": seq})
+        # ── RETRY LOOP FOR VIEW CHANGES ───────────────────────────────
+        MAX_VIEW_CHANGES = 2
+        
+        for attempt in range(MAX_VIEW_CHANGES + 1):
+            rnd.agent_results.clear()
+            rnd.agent_errors.clear()
+            
+            # ── PHASE 0: AGENT EXECUTION ──────────────────────────────────
+            logger.info(f"[Round {seq}][View {self.view_number}] Phase 0: Querying {self.n} agents...")
+            self._emit("phase_update", {"phase": "AGENT_EXECUTION", "sequence": seq, "view": self.view_number})
 
-        agent_tasks = [
-            asyncio.wait_for(agent.decide_async(action_id, request), timeout=CONSENSUS_TIMEOUT_SEC)
-            for agent in self.agents
-        ]
-        results = await asyncio.gather(*agent_tasks, return_exceptions=True)
+            agent_tasks = [
+                asyncio.wait_for(agent.decide_async(action_id, request), timeout=CONSENSUS_TIMEOUT_SEC)
+                for agent in self.agents
+            ]
+            results = await asyncio.gather(*agent_tasks, return_exceptions=True)
 
-        for idx, result in enumerate(results):
-            agent = self.agents[idx]
-            if isinstance(result, asyncio.TimeoutError):
-                rnd.agent_errors[agent.agent_id] = "TIMEOUT"
-                logger.warning(f"[Round {seq}] Agent {agent.agent_id} timed out")
-                self._emit("agent_response", {"agent_id": agent.agent_id, "status": "TIMEOUT"})
-            elif isinstance(result, Exception):
-                rnd.agent_errors[agent.agent_id] = str(result)
-                logger.error(f"[Round {seq}] Agent {agent.agent_id} failed: {result}")
-                self._emit("agent_response", {"agent_id": agent.agent_id, "status": "ERROR", "error": str(result)})
-            else:
-                rnd.agent_results[agent.agent_id] = result
-                logger.info(f"[Round {seq}] Agent {agent.agent_id} decided: {result.get('decision')}")
-                self._emit("agent_response", {"agent_id": agent.agent_id, "status": "OK", "decision": result.get("decision")})
+            for idx, result in enumerate(results):
+                agent = self.agents[idx]
+                if isinstance(result, asyncio.TimeoutError):
+                    rnd.agent_errors[agent.agent_id] = "TIMEOUT"
+                    logger.warning(f"[Round {seq}] Agent {agent.agent_id} timed out")
+                    self._emit("agent_response", {"agent_id": agent.agent_id, "status": "TIMEOUT"})
+                elif isinstance(result, Exception):
+                    rnd.agent_errors[agent.agent_id] = str(result)
+                    logger.error(f"[Round {seq}] Agent {agent.agent_id} failed: {result}")
+                    self._emit("agent_response", {"agent_id": agent.agent_id, "status": "ERROR", "error": str(result)})
+                else:
+                    rnd.agent_results[agent.agent_id] = result
+                    logger.info(f"[Round {seq}] Agent {agent.agent_id} decided: {result.get('decision')}")
+                    self._emit("agent_response", {"agent_id": agent.agent_id, "status": "OK", "decision": result.get("decision")})
 
-        if len(rnd.agent_results) < self.quorum_size:
-            logger.error(f"[Round {seq}] Not enough agent responses: {len(rnd.agent_results)} < {self.quorum_size}")
-            return None, None, rnd
+            # The Primary must be responsive to lead the next phases
+            primary_agent = self.agents[self.view_number % self.n]
+            if primary_agent.agent_id not in rnd.agent_results:
+                logger.error(f"[Round {seq}] Primary {primary_agent.agent_id} failed to respond (timeout/crash)")
+                if attempt < MAX_VIEW_CHANGES:
+                    primary_agent = await self._attempt_view_change("PRIMARY_TIMEOUT", seq)
+                    continue
+                else:
+                    return None, None, rnd
 
-        # ── DETERMINE MAJORITY DECISION ───────────────────────────────
-        decisions = [r.get("decision") for r in rnd.agent_results.values()]
-        decision_counts = Counter(decisions)
-        majority_decision, majority_count = decision_counts.most_common(1)[0]
+            if len(rnd.agent_results) < self.quorum_size:
+                logger.error(f"[Round {seq}] Not enough agent responses: {len(rnd.agent_results)} < {self.quorum_size}")
+                if attempt < MAX_VIEW_CHANGES:
+                    primary_agent = await self._attempt_view_change("INSUFFICIENT_RESPONSES", seq)
+                    continue
+                else:
+                    return None, None, rnd
 
-        if majority_count < self.quorum_size:
-            logger.warning(f"[Round {seq}] No quorum on any decision: {dict(decision_counts)}")
-            return None, None, rnd
+            # ── DETERMINE MAJORITY DECISION ───────────────────────────────
+            decisions = [r.get("decision") for r in rnd.agent_results.values()]
+            decision_counts = Counter(decisions)
+            majority_decision, majority_count = decision_counts.most_common(1)[0]
 
-        rnd.consensus_decision = majority_decision
-        logger.info(f"[Round {seq}] Majority decision: {majority_decision} ({majority_count}/{self.n})")
+            if majority_count < self.quorum_size:
+                logger.warning(f"[Round {seq}] No quorum on any decision: {dict(decision_counts)}")
+                if attempt < MAX_VIEW_CHANGES:
+                    primary_agent = await self._attempt_view_change("NO_DECISION_QUORUM", seq)
+                    continue
+                else:
+                    return None, None, rnd
 
-        # Pick a canonical result from the majority
-        majority_result = next(
-            r for r in rnd.agent_results.values() if r.get("decision") == majority_decision
-        )
+            rnd.consensus_decision = majority_decision
+            logger.info(f"[Round {seq}] Majority decision: {majority_decision} ({majority_count}/{self.n})")
+
+            # Pick a canonical result from the majority
+            majority_result = next(
+                r for r in rnd.agent_results.values() if r.get("decision") == majority_decision
+            )
+            
+            # If we reached here, we have a successful Phase 0, break retry loop!
+            break
 
         # ── PHASE 1: PRE-PREPARE ──────────────────────────────────────
         logger.info(f"[Round {seq}] Phase 1: Pre-Prepare from primary={primary_agent.agent_id}")

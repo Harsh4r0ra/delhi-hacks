@@ -21,6 +21,7 @@ export default function Dashboard() {
     round,
     history,
     intent,
+    viewChange,
     lastQueryResponse,
     isQuerying,
     wsConnected,
@@ -90,7 +91,7 @@ export default function Dashboard() {
               {/* Center: Consensus Flow + Vote Breakdown */}
               <main className="order-1 lg:order-2 space-y-4">
                 <ConsensusFlow round={round} lastResponse={lastQueryResponse} />
-                <ConsensusReplay round={round} />
+                <ConsensusReplay round={round} viewChange={viewChange} />
                 <VoteBreakdown response={lastQueryResponse} />
               </main>
 

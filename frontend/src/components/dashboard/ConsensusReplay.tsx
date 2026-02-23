@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import { CheckCircle2, ShieldAlert, Cpu, Activity, Lock, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { LiveRound, ViewChangeEvent } from "@/hooks/useByzantineMind";
+
 interface ReplayProps {
     round: any; // PBFT round state from websocket
+    viewChange?: ViewChangeEvent | null;
 }
 
-export default function ConsensusReplay({ round }: ReplayProps) {
+export default function ConsensusReplay({ round, viewChange }: ReplayProps) {
     const [activePhase, setActivePhase] = useState<number>(0);
     const [logs, setLogs] = useState<string[]>([]);
 
@@ -116,6 +119,20 @@ export default function ConsensusReplay({ round }: ReplayProps) {
                         </span>
                     </div>
                 ))}
+
+                {viewChange && viewChange.sequence === round.sequence && (
+                    <div className="flex gap-2 text-red-400 font-bold bg-red-500/10 p-2 rounded -mx-2 my-1 animate-in slide-in-from-left-2 fade-in">
+                        <ShieldAlert className="w-4 h-4 flex-shrink-0 animate-pulse" />
+                        <div>
+                            <span>⚡ VIEW CHANGE DETECTED</span>
+                            <div className="text-[10px] text-red-300 font-normal mt-0.5">
+                                Primary timeout. Rotating: View {viewChange.old_view} → View {viewChange.new_view} <br />
+                                New Primary: {viewChange.new_primary}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {activePhase < 3 && round.status !== "IDLE" && (
                     <div className="flex gap-2 animate-pulse text-muted-foreground">
                         <span>[...]</span>

@@ -258,7 +258,8 @@ async def clear_fault(req: FaultClearRequest):
 from backend.faults.scenarios import (
     scenario_compromised_agent,
     scenario_crash_recovery,
-    scenario_collusion_attempt
+    scenario_collusion_attempt,
+    run_primary_failure
 )
 
 @router.post("/scenarios/{scenario_name}")
@@ -270,6 +271,8 @@ async def run_scenario(scenario_name: str):
         return await scenario_crash_recovery(agents)
     elif scenario_name == "collusion_attempt":
         return await scenario_collusion_attempt(agents)
+    elif scenario_name == "primary_failure":
+        return await run_primary_failure(agents)
     else:
         raise HTTPException(status_code=404, detail="Scenario not found")
 
@@ -323,6 +326,9 @@ async def update_policies(req: PolicyUpdateRequest):
 @router.get("/config")
 async def get_config():
     """Returns current system configuration."""
+    # Assuming consensus_engine is scoped to the query route, we calculate the primary dynamically
+    # For a real system this would be tracked globally. We can track it via the WS events.
+    # To keep the API simple, we'll return the nominal view here (0 unless overridden)
     return {
         "mode": MODE,
         "f_faults": F_FAULTS,

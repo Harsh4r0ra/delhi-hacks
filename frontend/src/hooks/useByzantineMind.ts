@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api, type AgentStatus, type QueryResponse, type AuditEntry, type IntentDeclaration } from "@/lib/api";
+import { toast } from "sonner";
 
 const WS_URL = (import.meta.env.VITE_WS_URL as string | undefined) ?? "ws://localhost:8000/ws";
 
@@ -37,6 +38,13 @@ export interface LiveRound {
     prepareCount: number;
     commitCount: number;
 }
+export interface ViewChangeEvent {
+    old_view: number;
+    new_view: number;
+    new_primary: string;
+    reason: string;
+    sequence: number;
+}
 
 export function useByzantineMind() {
     const [agents, setAgents] = useState<AgentStatus[]>([]);
@@ -53,6 +61,7 @@ export function useByzantineMind() {
     const [history, setHistory] = useState<AuditEntry[]>([]);
     const [lastQueryResponse, setLastQueryResponse] = useState<QueryResponse | null>(null);
     const [intent, setIntent] = useState<IntentDeclaration | null>(null);
+    const [viewChange, setViewChange] = useState<ViewChangeEvent | null>(null);
     const [isQuerying, setIsQuerying] = useState(false);
     const [wsConnected, setWsConnected] = useState(false);
     const wsRef = useRef<WebSocket | null>(null);
@@ -98,6 +107,8 @@ export function useByzantineMind() {
     const handleWsEvent = useCallback((event: string, data: Record<string, unknown>) => {
         switch (event) {
             case "round_started":
+                // If we see a new round started, clear any stale view change notification
+                setViewChange(null);
                 setRound((prev) => ({
                     ...prev,
                     phase: "AGENT_EXECUTION",
@@ -109,6 +120,19 @@ export function useByzantineMind() {
                     prepareCount: 0,
                     commitCount: 0,
                 }));
+                break;
+
+            case "view_change":
+                setViewChange({
+                    old_view: Number(data.old_view),
+                    new_view: Number(data.new_view),
+                    new_primary: String(data.new_primary),
+                    reason: String(data.reason),
+                    sequence: Number(data.sequence),
+                });
+                toast.error(`Primary failed. View Change: ${data.old_view} → ${data.new_view}`, {
+                    icon: "⚡"
+                });
                 break;
 
             case "phase_update":
@@ -204,6 +228,7 @@ export function useByzantineMind() {
         round,
         history,
         intent,
+        viewChange,
         lastQueryResponse,
         isQuerying,
         wsConnected,

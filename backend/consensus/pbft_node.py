@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Optional
-from backend.consensus.messages import PrePrepare, Prepare, Commit
+from backend.consensus.messages import PrePrepare, Prepare, Commit, ViewChange
 from backend.crypto.identity import AgentIdentity
 from backend.utils import canonical_json, sha256
 
@@ -17,6 +17,19 @@ class PBFTNode:
         self.pre_prepares: Dict[int, Dict[int, Dict[str, PrePrepare]]] = {}
         self.prepares: Dict[int, Dict[int, Dict[str, List[Prepare]]]] = {}
         self.commits: Dict[int, Dict[int, Dict[str, List[Commit]]]] = {}
+
+    def on_view_change(self, new_view: int) -> ViewChange:
+        """Transitions node to a new view and generates a signed ViewChange message."""
+        self.view_number = new_view
+        vc = ViewChange(
+            agent_id=self.agent_id,
+            view_number=self.view_number,
+            sequence_number=self.sequence_number,
+            new_view=new_view,
+        )
+        payload = canonical_json(vc.model_dump(exclude={"signature"}))
+        vc.signature = self.identity.sign(payload)
+        return vc
 
     def on_pre_prepare(self, msg: PrePrepare) -> Optional[Prepare]:
         """Receives a Pre-Prepare message. Returns a Prepare message to broadcast if valid."""

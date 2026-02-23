@@ -157,3 +157,45 @@ async def scenario_collusion_attempt(
             f"This demonstrates WHY n=3f+1 matters. To tolerate 2 faults, you need n=7 agents."
         ),
     }
+
+async def run_primary_failure(agents: List[BaseAgent]) -> Dict[str, Any]:
+    """
+    Simulates the Primary Agent crashing or timing out, forcing a View Change.
+    """
+    # The primary for view 0 is agents[0], which has agent_id 'agent_0'
+    target_primary = "agent_0"
+    injector = FaultInjector()
+    
+    logger.info(f"Injecting CRASH fault on primary {target_primary}")
+    injector.inject(agents, target_primary, FaultConfig(
+        fault_type=FaultType.CRASH,
+        delay_seconds=10.0, # simulates timeout
+    ))
+
+    engine = ConsensusEngine(agents)
+    request = {
+        "type": "EXECUTION",
+        "operation": "PING",
+        "target": "system",
+        "risk": "LOW",
+    }
+
+    # The engine will attempt view 0, timeout on agent 1, and trigger a view change
+    result, cert, rnd = await engine.submit_request("demo-view-change", request)
+
+    injector.clear(agents, target_primary)
+
+    return {
+        "scenario": "primary_failure",
+        "primary_agent": target_primary,
+        "fault_type": "CRASH",
+        "new_view": engine.view_number,
+        "new_primary": agents[engine.view_number % len(agents)].agent_id,
+        "consensus_decision": rnd.consensus_decision,
+        "explanation": (
+            f"The primary agent '{target_primary}' crashed and failed to respond. "
+            f"The ConsensusEngine detected the timeout, executed a VIEW CHANGE to view {engine.view_number}, "
+            f"elected '{agents[engine.view_number % len(agents)].agent_id}' as the new primary, and successfully reached consensus. "
+            f"This demonstrates PBFT Liveness."
+        ),
+    }

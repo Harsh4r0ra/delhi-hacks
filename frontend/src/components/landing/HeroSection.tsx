@@ -1,118 +1,89 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Github } from "lucide-react";
 import { motion } from "framer-motion";
 import NetworkVisualization from "./NetworkVisualization";
 import LiveCounter from "./LiveCounter";
-import heroVisual from "@/assets/hero-visual.jpg";
+import fingerprintVisual from "@/assets/fingerprint.png";
 
 export default function HeroSection({ completedRounds, failures }: { completedRounds: number; failures: number }) {
   return (
-    <section className="relative min-h-screen overflow-hidden pt-20">
-      {/* Background grid pattern */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `linear-gradient(hsl(var(--primary)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--primary)) 1px, transparent 1px)`,
-          backgroundSize: "60px 60px",
-        }}
-      />
-
-      {/* Network visualization background */}
-      <div className="absolute inset-0 opacity-60">
+    <section className="relative min-h-screen overflow-hidden pt-20 bg-[#06080F]">
+      {/* Network visualization background - faint */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
         <NetworkVisualization />
       </div>
 
       {/* Radial gradient overlay */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_30%_50%,transparent_0%,hsl(224_47%_7%)_70%)]" />
-
-      {/* Decorative green arc */}
-      <div className="pointer-events-none absolute right-0 top-1/4 h-[500px] w-[500px] rounded-full bg-[radial-gradient(circle,hsl(142_71%_45%/0.06)_0%,transparent_70%)]" />
-
-      {/* Left vertical text */}
-      <div className="pointer-events-none absolute left-4 top-1/2 z-10 hidden -translate-y-1/2 lg:block">
-        <span className="font-mono-code text-[10px] uppercase tracking-[0.4em] text-muted-foreground/30" style={{ writingMode: "vertical-rl" }}>
-          A D A P T I V E &nbsp; S E C U R I T Y .
-        </span>
-      </div>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#06080F_80%)]" />
 
       {/* Main hero content */}
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-5rem)] max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-        <div className="grid w-full gap-12 lg:grid-cols-2 lg:gap-8">
+      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-8rem)] max-w-7xl items-center px-4 sm:px-6 lg:px-8 py-10">
+        <div className="grid w-full gap-12 lg:grid-cols-2 lg:gap-8 items-center">
           {/* Left side — text */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="flex flex-col justify-center"
+            className="flex flex-col justify-center max-w-xl"
           >
-            <div className="mb-8 inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-primary backdrop-blur-sm">
-              <span className="h-2 w-2 rounded-full bg-primary animate-pulse-glow" />
-              Byzantine Consensus
+            <div className="mb-6 inline-flex w-fit items-center gap-2 border border-border/20 bg-card/10 px-3 py-1.5 text-[11px] font-medium text-muted-foreground backdrop-blur-sm rounded">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />
+              The Nº1 choice for Byzantine Fault Tolerant AI Consensus
             </div>
 
-            <h1 className="mb-6 font-mono-code text-3xl font-extrabold uppercase leading-[1.1] tracking-wider sm:text-4xl lg:text-5xl xl:text-6xl">
-              <span className="text-foreground">Cyber</span>{" "}
-              <span className="text-gradient-green">Defense</span>
-              <br />
-              <span className="text-foreground">That Evolves</span>
-              <br />
-              <span className="text-gradient-hero">Daily.</span>
+            <h1 className="mb-6 font-mono-code text-3xl font-bold uppercase leading-[1.1] tracking-wide sm:text-4xl lg:text-[40px] text-foreground">
+              COMPREHENSIVE BFT CONSENSUS DESIGNED FOR EVERY AI BUSINESS
             </h1>
 
-            <p className="mb-10 max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
-              ByzantineMind guarantees AI decisions are cryptographically verified,
-              quorum-sealed, and mathematically provable — even when agents are
-              compromised.
+            <p className="mb-10 text-sm leading-relaxed text-muted-foreground/80">
+              We combine heterogeneous LLM ensembles with PBFT consensus to protect your automated systems, filter Byzantine faults, and ensure deterministic, secure agentic execution around the clock.
             </p>
 
-            {/* Play button + CTA row */}
-            <div className="mb-8 flex items-center gap-6">
-              <button className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border-2 border-primary/40 bg-primary/10 text-primary transition-all hover:bg-primary/20 hover:border-primary/60">
-                <Play className="h-5 w-5 ml-0.5" />
-              </button>
-              <div className="h-px flex-1 max-w-[60px] bg-primary/30" />
+            {/* CTA row */}
+            <div className="mb-8 flex items-center gap-4">
               <Link
                 to="/dashboard"
-                className="group inline-flex items-center justify-center gap-2.5 rounded-xl bg-primary px-8 py-4 text-sm font-bold uppercase tracking-wider text-primary-foreground transition-all hover:bg-primary/90 glow-green"
+                className="inline-flex h-11 items-center justify-center bg-[#10b981] px-8 text-xs font-bold uppercase tracking-wider text-black transition-all hover:bg-[#0ea5e9]/90 hover:opacity-90"
               >
-                Get Protected Today
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                GET A DEMO
               </Link>
-            </div>
-
-            {/* Inline stats */}
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="font-mono-code text-lg font-bold text-primary">1,600+</span>
-                <span className="text-xs">Users Active</span>
-              </div>
-              <span className="text-muted-foreground/30">+</span>
-              <div className="flex items-center gap-2">
-                <span className="font-mono-code text-lg font-bold text-primary">300+</span>
-                <span className="text-xs">Technologies</span>
-              </div>
+              <Link
+                to="/about"
+                className="inline-flex h-11 items-center justify-center border border-border/50 bg-transparent px-8 text-xs font-bold uppercase tracking-wider text-foreground hover:bg-muted/10 transition-colors"
+              >
+                LEARN MORE
+              </Link>
             </div>
           </motion.div>
 
-          {/* Right side — floating visual */}
+          {/* Right side — Fingerprint visual */}
           <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-            className="relative hidden items-center justify-center lg:flex"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
+            className="relative flex flex-col items-end justify-center"
           >
-            <motion.div
-              animate={{ y: [0, -16, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="relative"
-            >
-              <div className="absolute -inset-4 rounded-3xl bg-primary/10 blur-3xl" />
-              <img
-                src={heroVisual}
-                alt="ByzantineMind AI Consensus Network"
-                className="relative h-auto max-h-[500px] w-full rounded-2xl border border-white/[0.08] object-cover shadow-2xl"
-              />
-            </motion.div>
+            <img
+              src={fingerprintVisual}
+              alt="Digital Fingerprint"
+              className="relative w-full max-w-[500px] h-auto object-contain mix-blend-screen opacity-90"
+            />
+
+            <div className="mt-8 flex flex-col items-end gap-3 mr-4">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                TRUSTED BY INDUSTRY LEADERS
+              </span>
+              <div className="flex items-center gap-8 text-muted-foreground/50">
+                {/* SVG placeholders for IBM, AWS */}
+                <svg viewBox="0 0 100 30" className="h-4 w-auto fill-current">
+                  <path d="M0,0h25v5H0V0z M0,10h25v5H0V10z M0,20h25v5H0V20z M35,0h25v30H35V0z M70,0h30v5H70V0z M70,10h30v5H70V10z M70,20h30v5H70V20z" />
+                </svg>
+                <svg viewBox="0 0 100 40" className="h-5 w-auto fill-current">
+                  <path d="M20,30 C30,40 70,40 80,30 C60,45 40,45 20,30 Z M40,10 L50,0 L60,10 Z M30,10h40v10h-40z" />
+                </svg>
+                <Github className="h-5 w-5" />
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>
@@ -122,9 +93,9 @@ export default function HeroSection({ completedRounds, failures }: { completedRo
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.6 }}
-        className="relative z-10 border-t border-border/30 bg-card/50 backdrop-blur-xl"
+        className="relative z-10 bg-[#0A0D14] border-t border-border/10"
       >
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
           <LiveCounter completedRounds={completedRounds} failures={failures} />
         </div>
       </motion.div>

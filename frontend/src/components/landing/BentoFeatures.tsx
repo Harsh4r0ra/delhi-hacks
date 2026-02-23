@@ -6,46 +6,46 @@ import { Shield, Brain, Network, Fingerprint, Zap, Lock, Plus, ArrowRight } from
 const features = [
   {
     icon: Shield,
-    title: "Real-Time Threat Detection",
-    description: "Instant identification of Byzantine agents attempting to subvert consensus. Zero false positives through cryptographic verification.",
+    title: "Byzantine Fault Isolation",
+    description: "Instant identification of Byzantine agents attempting to subvert or hallucinate. Zero false positives through strict consensus matching.",
     span: "col-span-1",
   },
   {
     icon: Brain,
-    title: "Self-Learning AI Engine",
-    description: "Heterogeneous agents — GPT-4, Claude, Mistral — deliberate independently, improving accuracy with every round. The system gets smarter with each consensus cycle.",
+    title: "Heterogeneous AI Ensembles",
+    description: "Diverse agents — Llama 3.3, Qwen 3, Mistral, Phi-4 — deliberate independently to eliminate single-model bias and ensure robust reasoning.",
     span: "col-span-1 lg:col-span-1",
     highlight: true,
   },
   {
     icon: Network,
-    title: "Multi-Agent Protection",
-    description: "3f+1 fault tolerance ensures consensus even when up to f agents are compromised, crashed, or malicious.",
+    title: "PBFT Consensus Engine",
+    description: "With an n=7, f=2 architecture, our engine guarantees deterministic resolution even when multiple agents are compromised, crashed, or lying.",
     span: "col-span-1",
   },
   {
     icon: Fingerprint,
-    title: "Cryptographic Proof",
-    description: "Ed25519 signed decisions, hash-chained into immutable certificates. Verify any past consensus in milliseconds.",
+    title: "Immutable Certificates",
+    description: "Every consensus packet is cryptographically signed via Ed25519 and hash-chained into tamper-proof audit trails for total transparency.",
     span: "col-span-1",
   },
   {
     icon: Zap,
-    title: "Live Attack Resistance",
-    description: "Inject faults in real-time — crash, lie, collude. Consensus holds mathematically.",
+    title: "Interactive Threat Simulation",
+    description: "Inject critical faults in real-time — node crashes, malicious sybil attacks, and collusion — and watch the PBFT engine self-heal live.",
     span: "col-span-1",
   },
   {
     icon: Lock,
-    title: "Intent Guardrails",
-    description: "ArmorIQ parses intent, classifies risk, and validates alignment before execution.",
+    title: "ArmorIQ Pre-execution",
+    description: "Our proprietary guardrail parses intent, classifies severity risk, and enforces rigid security boundaries before broad AI execution begins.",
     span: "col-span-1",
   },
 ];
 
 export default function BentoFeatures() {
   return (
-    <section id="features" className="relative py-24 sm:py-32">
+    <section id="features" className="relative py-8 sm:py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -58,8 +58,8 @@ export default function BentoFeatures() {
             Features
           </Badge>
           <h2 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            Smarter Each Day,{" "}
-            <span className="text-gradient-green">Stronger Every Hour</span>
+            Deterministic Accuracy,{" "}
+            <span className="text-gradient-green">Mathematically Proven</span>
           </h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             A first-of-its-kind platform where AI agents achieve mathematically proven consensus,
@@ -78,11 +78,10 @@ export default function BentoFeatures() {
               transition={{ duration: 0.5, delay: i * 0.08 }}
             >
               <Card
-                className={`group relative h-full border-white/[0.06] bg-white/[0.02] backdrop-blur-xl transition-all hover:border-primary/20 ${
-                  feat.highlight
+                className={`group relative h-full border-white/[0.06] bg-white/[0.02] backdrop-blur-xl transition-all hover:border-primary/20 ${feat.highlight
                     ? "border-primary/20 bg-primary/[0.06] shadow-[0_0_40px_-12px_hsl(var(--primary)/0.2)]"
                     : ""
-                }`}
+                  }`}
               >
                 {/* Corner + icon */}
                 {!feat.highlight && (
@@ -108,12 +107,6 @@ export default function BentoFeatures() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm leading-relaxed text-muted-foreground">{feat.description}</p>
-                  {feat.highlight && (
-                    <button className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-all hover:bg-primary/90">
-                      Get Started
-                      <ArrowRight className="h-3 w-3" />
-                    </button>
-                  )}
                 </CardContent>
               </Card>
             </motion.div>

@@ -102,14 +102,14 @@ export default function ConsensusFlow({ round, lastResponse }: Props) {
           <div className="flex gap-3 font-mono font-semibold">
             <span className="text-primary">{approvalCount} APPROVE</span>
             <span className="text-destructive">{rejectCount} REJECT</span>
-            <span className="text-muted-foreground">{agentCount} / 4 responded</span>
+            <span className="text-muted-foreground">{agentCount} / 7 responded</span>
           </div>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-muted">
           <motion.div
             className="h-full rounded-full bg-primary"
             initial={{ width: 0 }}
-            animate={{ width: `${(agentCount / 4) * 100}%` }}
+            animate={{ width: `${(agentCount / 7) * 100}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
           />
         </div>

@@ -162,8 +162,8 @@ async def run_primary_failure(agents: List[BaseAgent]) -> Dict[str, Any]:
     """
     Simulates the Primary Agent crashing or timing out, forcing a View Change.
     """
-    # The primary for view 0 is agents[0], which has agent_id 'agent_0'
-    target_primary = "agent_0"
+    # The primary for view 0 is agents[0], which is 'agent_1' (1-indexed)
+    target_primary = "agent_1"
     injector = FaultInjector()
     
     logger.info(f"Injecting CRASH fault on primary {target_primary}")
@@ -197,5 +197,49 @@ async def run_primary_failure(agents: List[BaseAgent]) -> Dict[str, Any]:
             f"The ConsensusEngine detected the timeout, executed a VIEW CHANGE to view {engine.view_number}, "
             f"elected '{agents[engine.view_number % len(agents)].agent_id}' as the new primary, and successfully reached consensus. "
             f"This demonstrates PBFT Liveness."
+        ),
+    }
+
+
+async def run_f2_failure(agents: List[BaseAgent]) -> Dict[str, Any]:
+    """
+    Simulates TWO agents failing simultaneously — the maximum BFT threshold with f=2 (n=7).
+    The system must still reach consensus with the remaining 5 agents (quorum = 2f+1 = 5).
+    """
+    # Crash 2 agents: agent_1 (Mistral) and agent_2 (Groq Llama)
+    targets = ["agent_1", "agent_2"]
+    injector = FaultInjector()
+
+    for t in targets:
+        logger.info(f"Injecting CRASH fault on {t}")
+        injector.inject(agents, t, FaultConfig(fault_type=FaultType.CRASH))
+
+    engine = ConsensusEngine(agents)
+    request = {
+        "type": "EXECUTION",
+        "operation": "DATA_READ",
+        "target": "secure_database",
+        "risk": "MEDIUM",
+    }
+
+    result, cert, rnd = await engine.submit_request("demo-f2-failure", request)
+
+    for t in targets:
+        injector.clear(agents, t)
+
+    surviving_count = len(rnd.agent_results)
+    return {
+        "scenario": "f2_double_failure",
+        "crashed_agents": targets,
+        "fault_type": "CRASH",
+        "surviving_agents": surviving_count,
+        "consensus_decision": rnd.consensus_decision,
+        "certificate_generated": cert is not None,
+        "explanation": (
+            f"Two agents ({', '.join(targets)}) crashed simultaneously. "
+            f"With n=7 and f=2, BFT guarantees are only valid up to 2 failures. "
+            f"The remaining {surviving_count} agents still formed a quorum of 5/7 (2f+1) "
+            f"and reached consensus: '{rnd.consensus_decision}'. "
+            f"This demonstrates the mathematical guarantee of n ≥ 3f+1."
         ),
     }

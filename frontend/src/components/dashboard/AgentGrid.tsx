@@ -12,7 +12,7 @@ export default function AgentGrid({ agents }: AgentGridProps) {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Agent Nodes
         </h2>
-        {[1, 2, 3, 4].map((i) => (
+        {Array.from({ length: 7 }).map((_, i) => (
           <div key={i} className="glass-card h-24 animate-pulse p-4" />
         ))}
       </div>

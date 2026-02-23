@@ -3,33 +3,33 @@ import { motion } from "framer-motion";
 const steps = [
   {
     num: "01",
-    title: "Intent Submitted",
-    description: "An autonomous agent submits an action proposal with structured intent declaration and risk metadata.",
+    title: "ArmorIQ Pre-execution",
+    description: "Every intent passes through ArmorIQ. Strict guardrails classify risk, block hallucinations, and enforce rigid parameters before consensus even begins.",
     color: "var(--primary)",
   },
   {
     num: "02",
-    title: "Agents Deliberate",
-    description: "All agents independently evaluate the proposal using their own models and broadcast cryptographically signed votes.",
+    title: "7-Agent PBFT Deliberation",
+    description: "Our heterogeneous ensemble independently evaluates the sanitized proposal, broadcasting cryptographically signed votes across the network.",
     color: "var(--primary)",
   },
   {
     num: "03",
-    title: "Quorum Sealed",
-    description: "Once ⌈2n/3 + 1⌉ agents agree, the consensus is cryptographically sealed with hash-chained certificates.",
+    title: "f=2 Quorum Sealed",
+    description: "Once a 2f+1 supermajority is reached, the decision is locked. The PBFT consensus mathematically filters out any Byzantine (lying or crashed) nodes.",
     color: "var(--success)",
   },
   {
     num: "04",
-    title: "Action Executed",
-    description: "The verified decision is committed to the immutable log and the action is executed with full audit provenance.",
+    title: "Deterministic Execution",
+    description: "The verified decision is committed to an immutable Ed25519 hash-chain, and the action is executed with absolute audit provenance.",
     color: "var(--warning)",
   },
 ];
 
 export default function HowItWorks() {
   return (
-    <section className="relative py-24 sm:py-32">
+    <section className="relative py-8 sm:py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

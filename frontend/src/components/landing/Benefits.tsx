@@ -6,31 +6,31 @@ import { Rocket, TrendingUp, Moon, ClipboardCheck } from "lucide-react";
 const benefits = [
   {
     icon: Rocket,
-    title: "Future-Proof Your Security",
-    description: "Built on mathematical proofs that don't expire. As threats evolve, the consensus guarantees remain unbreakable.",
+    title: "Deterministic Execution",
+    description: "Built on strict mathematical PBFT proofs. Hallucinations and malicious node outputs are filtered out before an action is ever executed.",
     large: true,
   },
   {
     icon: TrendingUp,
-    title: "Scale Without Fear",
-    description: "From 4 agents to 400 — the Byzantine Fault Tolerance scales linearly while maintaining sub-second consensus.",
+    title: "Scale Without Failure",
+    description: "From n=4 to n=7 agents, the Byzantine Fault Tolerance scales seamlessly, maintaining sub-second consensus across diverse LLMs.",
     accent: true,
   },
   {
     icon: Moon,
-    title: "Stay Safe While You Sleep",
-    description: "24/7 autonomous monitoring. Agents deliberate and decide in real-time, no human bottleneck required.",
+    title: "Autonomous 24/7 Defense",
+    description: "Our agents deliberate and reach quorum in real-time, functioning completely autonomously without human bottleneck or intervention.",
   },
   {
     icon: ClipboardCheck,
-    title: "Compliance Made Simple",
-    description: "Every decision is cryptographically signed and auditable. Generate compliance reports from the immutable consensus log.",
+    title: "Immutable Auditing",
+    description: "Every consensus packet is cryptographically signed and hash-chained. Generate compliance reports instantly from a mathematically verified log.",
   },
 ];
 
 export default function Benefits() {
   return (
-    <section className="relative py-24 sm:py-32">
+    <section className="relative py-8 sm:py-16">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.02]"
         style={{
@@ -50,15 +50,15 @@ export default function Benefits() {
         >
           <div>
             <Badge variant="outline" className="mb-4 border-primary/20 bg-primary/5 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-              Benefit
+              Core Benefits
             </Badge>
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-              Protection That Gets{" "}
-              <span className="text-gradient-green">Smarter With You</span>
+              Execution That Gets{" "}
+              <span className="text-gradient-green">Stronger With Scale</span>
             </h2>
           </div>
           <p className="max-w-md text-sm leading-relaxed text-muted-foreground lg:text-right">
-            Our adaptive security platform learns from every interaction, building stronger defenses that evolve with your infrastructure.
+            Our multi-agent consensus platform mathematically guarantees correct execution, filtering out faults and bias through diverse LLM ensembles.
           </p>
         </motion.div>
 

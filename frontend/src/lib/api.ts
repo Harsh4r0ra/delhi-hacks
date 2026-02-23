@@ -129,6 +129,17 @@ export const api = {
 
     exportSession: () => `${BASE}/api/session/export`,
 
+    uploadSessionReport: async (file: File): Promise<{ explanation: string }> => {
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch(`${BASE}/api/session/explain`, { method: "POST", body: form });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ detail: res.statusText }));
+            throw new Error((err as { detail?: string }).detail ?? "Explain failed");
+        }
+        return res.json();
+    },
+
     submitQuery: (body: { operation: string; target: string; description?: string; strict_mode?: boolean }) =>
         req<QueryResponse>("/api/query", { method: "POST", body: JSON.stringify(body) }),
 

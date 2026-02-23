@@ -4,17 +4,17 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 
 const linkGroups = {
-  "For Applicants": {
-    Info: ["Dashboard", "Features", "How It Works"],
-    "Additional Link": ["API Docs", "SDK Guide", "Changelog"],
+  Platform: {
+    Dashboard: ["Simulation", "Metrics", "Agents"],
+    Architecture: ["PBFT Consensus", "ArmorIQ Layer", "Audit Logs"],
   },
-  "For Customers": {
-    Info: ["Support", "Status Page", "SLA"],
-    "Additional Link": ["Compliance", "Security", "Privacy"],
+  Developers: {
+    Resources: ["GitHub Repo", "API Reference", "SDKs"],
+    Community: ["Discord", "Twitter", "Blog"],
   },
-  Services: {
-    Info: ["Consensus API", "Fault Injection", "Audit Trail"],
-    "Additional Link": ["Enterprise", "Custom Agents", "Consulting"],
+  Project: {
+    Details: ["About Us", "Team", "Vision"],
+    Hackathon: ["Devpost", "Submission Video", "Pitch Deck"],
   },
 };
 
@@ -28,12 +28,7 @@ export default function Footer() {
             {/* Newsletter column */}
             <div>
               <Link to="/" className="mb-6 flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/30 bg-primary/10">
-                  <Shield className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-base font-bold text-foreground">
-                  BYZANTINE<span className="text-primary">MIND</span>
-                </span>
+                <img src="/logo.png" alt="ByzantineMind Logo" className="h-[36px] w-[180px] object-contain" />
               </Link>
               <h4 className="mb-4 text-lg font-bold text-foreground">Subscribe to our newsletter</h4>
               <div className="flex gap-2">
@@ -96,7 +91,7 @@ export default function Footer() {
             </p>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-4">
-                <a href="#" className="text-muted-foreground transition-colors hover:text-primary">
+                <a href="https://github.com/Harsh4r0ra/delhi-hacks" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-primary">
                   <Github className="h-4 w-4" />
                 </a>
                 <a href="#" className="text-muted-foreground transition-colors hover:text-primary">

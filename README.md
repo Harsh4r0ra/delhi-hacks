@@ -4,7 +4,7 @@
 
 ### AI Consensus Through Byzantine Fault Tolerance
 
-*When one AI can be tricked, four AIs voting can't be fooled.*
+*When one AI can be tricked, seven AIs voting can't be fooled.*
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React_18-61DAFB?logo=react&logoColor=black)](https://react.dev)
@@ -19,21 +19,21 @@
 
 **ByzantineMind** is a Byzantine Fault Tolerant AI consensus system that prevents any single AI model from being manipulated, hallucinating, or being compromised.
 
-Instead of trusting one LLM, ByzantineMind routes every action through **4 independent AI agents** (Mistral, Groq/Llama, Gemini, Cerebras) and requires a **cryptographic 2f+1 quorum** before any decision is finalized — exactly like how distributed databases prevent data corruption.
+Instead of trusting one LLM, ByzantineMind routes every action through an ensemble of **7 independent AI agents** (Mistral, Groq, Gemini, Cerebras, OpenRouter) and requires a **cryptographic 2f+1 quorum** before any decision is finalized — exactly like how distributed ledgers prevent data corruption.
 
 > **The Problem:** A single LLM can be prompt-injected, hallucinate, or be silently compromised.
 >
-> **Our Solution:** A PBFT consensus protocol where 4 diverse LLMs independently evaluate every action. Even if 1 agent is fully compromised (Byzantine fault), the remaining 3 outvote it and the system stays safe.
+> **Our Solution:** A PBFT consensus protocol where 7 diverse LLMs independently evaluate every action. Even if **2 agents** are fully compromised (Byzantine faults), the remaining 5 form a quorum and the system stays mathematically safe.
 
 ---
 
 ## 🏗️ Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    React 18 + TypeScript                     │
-│   Landing Page │ Live Dashboard │ System Overview │ Audit    │
-│   Query Input  │ Vote Breakdown │ Fault Injector │ Tabs     │
+│   Landing Page │ Live Dashboard │ Session EXPLAINER Chatbot  │
+│   Query Input  │ Vote Breakdown │ Trust Scores │ Faults     │
 └────────────────────────┬────────────────────────────────────┘
                          │  WebSocket (live events) + REST API
 ┌────────────────────────┴────────────────────────────────────┐
@@ -51,13 +51,12 @@ Instead of trusting one LLM, ByzantineMind routes every action through **4 indep
 │  │  + View Change on timeout  +  Cryptographic Certs      │  │
 │  └────────────────────────────────────────────────────────┘  │
 ├──────────────────────────────────────────────────────────────┤
-│  Agent Ensemble (4 Independent LLM Nodes)                     │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐ │
-│  │ Mistral  │  │  Groq    │  │  Gemini  │  │  Cerebras   │ │
-│  │ Small    │  │ Llama70B │  │  Flash   │  │  Llama 70B  │ │
-│  └──────────┘  └──────────┘  └──────────┘  └─────────────┘ │
+│  Heterogeneous Agent Ensemble (7 Independent LLM Nodes)       │
+│  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌──────────────┐ │
+│  │ Mistral│ │ Groq   │ │ Gemini │ │ OR Phi4│ │ Cerebras etc │ │
+│  └────────┘ └────────┘ └────────┘ └────────┘ └──────────────┘ │
 ├──────────────────────────────────────────────────────────────┤
-│  Ed25519 Crypto  │  Fault Injector  │  SQLite Audit Trail   │
+│  Ed25519 Crypto  │  Fault Injector  │  Dynamic Trust Scores │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -68,7 +67,7 @@ Instead of trusting one LLM, ByzantineMind routes every action through **4 indep
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
-- API keys for at least one LLM provider (Mistral, Groq, Gemini, or Cerebras)
+- API keys for LLM providers (Mistral, Groq, Gemini, Cerebras, OpenRouter)
 
 ### 1. Clone & Setup
 
@@ -97,9 +96,10 @@ cp .env.example .env
 | `MISTRAL_API_KEY` | [Mistral AI](https://console.mistral.ai) | ✅ |
 | `GROQ_API_KEY` | [Groq](https://console.groq.com) | ✅ |
 | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com) | ✅ |
+| `OPENROUTER_API_KEY`| [OpenRouter](https://openrouter.ai/)     | ✅ |
 | `CEREBRAS_API_KEY` | [Cerebras](https://cloud.cerebras.ai) | ✅ |
 
-Set `MODE=full` for real LLMs, or `MODE=fast` for instant simulated agents.
+Set `MODE=full` for real LLMs, or `MODE=fast` for instant simulated agents. OpenRouter enables automatic load-balancing and higher diversity (Gemma 2, DeepSeek, Phi-4).
 
 ### 3. Start Backend
 
@@ -125,77 +125,38 @@ npm run dev
 
 ---
 
-## 🎮 Automated Demo
-
-Run the automated demo script to see all scenarios:
-
-```bash
-python demo/run_demo.py
-```
-
-This fires 5 predefined scenarios + a Byzantine fault injection attack, showing:
-- ✅ Safe operations being APPROVED
-- 🛑 Dangerous operations being REJECTED
-- ⚡ A compromised agent being outvoted by the healthy quorum
-- 📜 Full audit trail with cryptographic certificates
-
----
-
-## 🔑 Key Features
+##  Key Features
 
 | Feature | Description |
 |---------|-------------|
-| **Multi-Model Consensus** | 4 independent LLMs from different providers vote on every action |
-| **PBFT Protocol** | Real 3-phase Byzantine Fault Tolerant consensus with cryptographic certificates |
-| **ArmorIQ Security** | Intent classification, risk assessment, gatekeeper authorization, and drift detection |
-| **Fault Injection** | Live demo of Byzantine, Crash, Omission, Timing, and Collusion faults |
-| **Ed25519 Cryptography** | Every vote is cryptographically signed; certificates are tamper-proof |
-| **SQLite Audit Trail** | Every decision is permanently logged with full forensic detail |
-| **Real-Time Dashboard** | WebSocket-powered live visualization of consensus rounds |
-| **Dual Mode** | `fast` mode for instant demos, `full` mode for real LLM inference |
+| **7-Agent Consensus** | 7 independent LLMs from different providers vote on every action. |
+| **PBFT Protocol** | Real 3-phase Byzantine Fault Tolerant consensus with view changes and timeouts. |
+| **ArmorIQ Security** | Intent classification, risk assessment, gatekeeper authorization, and drift detection. |
+| **Dynamic Trust System**| Agent reputation scores that decay mathematically when they disagree with the established quorum. |
+| **AI Explainability**| Download a raw CSV session audit, upload it to the built-in Chatbot, and let Llama 3.3 generate a human-friendly Security Health Report. |
+| **Fault Injection** | Live dashboard console to inject Byzantine (lying), Crash, or Collusion faults to test system liveness. |
+| **Ed25519 Cryptography** | Every vote is cryptographically signed; certificates are tamper-proof. |
 
 ---
 
 ## 🧪 BFT Parameters
 
+With 7 nodes, ByzantineMind can tolerate **2 simultaneous bad actors** while guaranteeing mathematically proven consensus.
+
 | Parameter | Value | Meaning |
 |-----------|:-----:|---------|
-| **n** (nodes) | 4 | Total consensus participants |
-| **f** (faults) | 1 | Maximum tolerable Byzantine faults |
-| **Quorum** | 3 | Minimum votes needed (2f+1) |
+| **n** (nodes) | 7 | Total consensus participants |
+| **f** (faults) | 2 | Maximum tolerable Byzantine faults |
+| **Quorum** | 5 | Minimum votes needed (2f+1) |
 | **Formula** | n = 3f+1 | Classic PBFT safety bound |
-
----
-
-## 📁 Project Structure
-
-```
-delhi-hacks/
-├── backend/
-│   ├── agents/           # LLM agent implementations (Mistral, Groq, Gemini, Cerebras)
-│   ├── api/              # FastAPI routes + WebSocket
-│   ├── armoriq/          # Intent engine, gatekeeper, sentry, auditor, registry
-│   ├── consensus/        # PBFT engine, messages, certificates
-│   ├── crypto/           # Ed25519 identity + signing
-│   └── faults/           # Fault injector (Byzantine, Crash, Omission, etc.)
-├── frontend/
-│   ├── src/components/   # Dashboard + Landing page components
-│   ├── src/hooks/        # useByzantineMind (WebSocket + REST)
-│   ├── src/lib/          # API client + types
-│   └── src/pages/        # Index, Dashboard, NotFound
-├── demo/
-│   └── run_demo.py       # Automated demonstration script
-├── .env.example          # API key template
-└── req.txt               # Python dependencies
-```
 
 ---
 
 ## 🏆 Built for Delhi Hacks
 
-ByzantineMind was built to solve a fundamental problem in AI safety: **How do you trust an AI's decision when any single model can be compromised?**
+ByzantineMind was built to solve a fundamental problem in AI safety: **How do you trust an autonomous AI's decision when any single model can be compromised or hallucinate?**
 
-Our answer: **You don't trust one. You make four vote.**
+Our answer: **You don't trust one. You make seven vote.**
 
 ---
 

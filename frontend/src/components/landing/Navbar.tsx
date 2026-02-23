@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { Shield, Menu, X, ArrowRight, Search } from "lucide-react";
+import { Menu, X, ArrowRight, Search } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import logoImage from "@/assets/logo.png";
 
 const navLinks = [
   { label: "About", href: "#about" },
@@ -16,14 +17,16 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/30 bg-primary/10">
-            <Shield className="h-5 w-5 text-primary" />
+        {/* Left side: Logo & Brand Name */}
+        <Link to="/" className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full">
+            <img src={logoImage} alt="ByzantineMind Logo" className="h-full w-full object-cover" />
           </div>
-          <span className="text-lg font-bold tracking-tight text-foreground">
-            BYZANTINE<span className="text-primary">MIND</span>
+          <span className="text-xl font-black tracking-widest text-[#e2e8f0]">
+            BYZANTINE<span className="text-[#10b981]">MIND</span>
           </span>
         </Link>
+
 
         <div className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) =>

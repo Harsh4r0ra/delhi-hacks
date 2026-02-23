@@ -7,7 +7,6 @@ import HowItWorks from "@/components/landing/HowItWorks";
 import Benefits from "@/components/landing/Benefits";
 import WhyChooseUs from "@/components/landing/WhyChooseUs";
 import FAQSection from "@/components/landing/FAQSection";
-import Testimonials from "@/components/landing/Testimonials";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
 import { useConsensusSimulation } from "@/hooks/useConsensusSimulation";
@@ -33,7 +32,6 @@ const Index = () => {
         <div id="faq">
           <FAQSection />
         </div>
-        <Testimonials />
         <CTASection />
       </main>
       <Footer />

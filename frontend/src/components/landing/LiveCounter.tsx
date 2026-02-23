@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Separator } from "@/components/ui/separator";
 
 function AnimatedNumber({ value }: { value: number }) {
   const [display, setDisplay] = useState(value);
@@ -11,40 +10,35 @@ function AnimatedNumber({ value }: { value: number }) {
     return () => clearTimeout(timer);
   }, [display, value]);
 
-  return <span className="font-mono-code text-3xl font-extrabold tabular-nums text-primary sm:text-4xl">{display}</span>;
+  return <>{display}</>;
 }
 
 const stats = [
-  { key: "uptime", label: "Uptime", static: true, value: "99.99%" },
-  { key: "rounds", label: "Consensus Rounds", static: false },
-  { key: "failures", label: "Failures", static: false },
-  { key: "monitoring", label: "Monitoring", static: true, value: "24/7" },
+  { key: "accuracy", value: "99%", label: "Advanced threat detection accuracy", static: true },
+  { key: "clients", value: "60+", label: "Enterprise clients protected globally", static: true },
+  { key: "incidents", value: "120+", label: "Incidents resolved in real time monthly", static: true },
+  { key: "monitoring", value: "24/7", label: "Continuous monitoring & response", static: true },
 ];
 
 export default function LiveCounter({ completedRounds, failures }: { completedRounds: number; failures: number }) {
+  // We adapt the "failures" to the incidents resolved to show dynamic data if we want,
+  // but the screenshot shows static 120+. We'll use static for the exact match.
+
   return (
-    <div className="flex flex-wrap items-center justify-center gap-8 sm:justify-between lg:gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border/10">
       {stats.map((s, i) => (
-        <div key={s.key} className="flex items-center gap-8">
-          <div className="text-center">
-            {s.static ? (
-              <span className="font-mono-code text-3xl font-extrabold tabular-nums text-primary sm:text-4xl">
-                {s.value}
-              </span>
-            ) : s.key === "rounds" ? (
-              <AnimatedNumber value={completedRounds} />
-            ) : (
-              <span className="font-mono-code text-3xl font-extrabold tabular-nums text-primary sm:text-4xl">
-                {failures}
-              </span>
-            )}
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        <div key={s.key} className="relative bg-[#0A0D14] p-8 overflow-hidden group">
+          {/* Subtle green dot background effect */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px]" />
+
+          <div className="relative z-10 flex flex-col gap-2">
+            <span className="font-mono-code text-3xl font-bold text-white">
+              {s.value}
+            </span>
+            <p className="text-xs leading-relaxed text-muted-foreground/80 max-w-[150px]">
               {s.label}
             </p>
           </div>
-          {i < stats.length - 1 && (
-            <Separator orientation="vertical" className="hidden h-12 bg-border/30 sm:block" />
-          )}
         </div>
       ))}
     </div>

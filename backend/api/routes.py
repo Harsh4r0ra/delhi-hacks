@@ -15,6 +15,7 @@ import datetime
 from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException
+import os
 
 from backend.config import MODE, F_FAULTS, N_AGENTS
 from backend.agents.factory import create_agents
@@ -55,13 +56,30 @@ analytics_data = {
     "decisions_count": {"APPROVE": 0, "REJECT": 0}
 }
 
-# Agent model labels for the registry
-_MODEL_LABELS = {
-    "agent_1": "Mistral (mistral-small-latest)" if MODE == "full" else "SimulatedAgent",
-    "agent_2": "Groq (llama-3.3-70b-versatile)" if MODE == "full" else "SimulatedAgent",
-    "agent_3": "DeepSeek (deepseek-r1-distill-8b)" if MODE == "full" else "SimulatedAgent",
-    "agent_4": "Cerebras (llama3.1-8b)" if MODE == "full" else "SimulatedAgent",
+# Agent model labels for the registry — updated to 7-agent ensemble (agent_1..agent_7)
+_MODEL_LABELS_FULL = {
+    "agent_1": "Mistral Large (mistral-large-latest)",
+    "agent_2": "Groq Llama 3.3 70B (llama-3.3-70b)",
+    "agent_3": "Groq Qwen3 32B (qwen3-32b)",
+    "agent_4": "Gemini 2.0 Flash (gemini-2.0-flash)",
+    "agent_5": "OpenRouter Phi-4 (phi-4)",
+    "agent_6": "Cerebras GPT-OSS 120B (gpt-oss-120b)",
+    "agent_7": "Cerebras Llama 8B (llama3.1-8b)",
 }
+_MODEL_LABELS_OR = {
+    "agent_1": "Mistral Large (mistral-large-latest)",
+    "agent_2": "Groq Llama 3.3 70B (llama-3.3-70b)",
+    "agent_3": "OpenRouter Gemma 2 9B (gemma-2-9b-it)",
+    "agent_4": "OpenRouter DeepSeek R1 (deepseek-r1)",
+    "agent_5": "OpenRouter Phi-4 (phi-4)",
+    "agent_6": "Gemini 2.0 Flash (gemini-2.0-flash)",
+    "agent_7": "Cerebras Llama 8B (llama3.1-8b)",
+}
+_has_openrouter = bool(os.getenv("OPENROUTER_API_KEY"))
+_MODEL_LABELS = (
+    {k: v for k, v in _MODEL_LABELS_OR.items()} if _has_openrouter
+    else ({k: v if MODE == "full" else "SimulatedAgent" for k, v in _MODEL_LABELS_FULL.items()})
+)
 
 for agent in agents:
     registry.register_agent(agent.agent_id, _MODEL_LABELS.get(agent.agent_id, "Unknown"))
@@ -259,7 +277,8 @@ from backend.faults.scenarios import (
     scenario_compromised_agent,
     scenario_crash_recovery,
     scenario_collusion_attempt,
-    run_primary_failure
+    run_primary_failure,
+    run_f2_failure
 )
 
 @router.post("/scenarios/{scenario_name}")
@@ -273,6 +292,8 @@ async def run_scenario(scenario_name: str):
         return await scenario_collusion_attempt(agents)
     elif scenario_name == "primary_failure":
         return await run_primary_failure(agents)
+    elif scenario_name == "f2_failure":
+        return await run_f2_failure(agents)
     else:
         raise HTTPException(status_code=404, detail="Scenario not found")
 
@@ -404,32 +425,140 @@ async def export_session():
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
     )
+
+
+# ── Session Explainability ─────────────────────────────────────────
+from fastapi import UploadFile, File
+
+EXPLAIN_SYSTEM_PROMPT = """You are a friendly and expert AI Security Analyst for ByzantineMind — a Byzantine Fault Tolerant AI consensus platform.
+
+A user has uploaded their session report (a CSV file). Your job is to translate the raw data into a clear, engaging, humanized security briefing that a non-technical user can immediately understand.
+
+Structure your response in this exact markdown format:
+
+## 🛡️ Session Health Report
+
+A 1-2 sentence executive summary of the overall session health.
+
+## 📊 Activity Overview
+
+Bullet points covering key metrics: number of queries, consensus reached, blocked threats, approval/rejection ratio.
+
+## ⚡ Performance
+
+Comment on the average latency and what it means in the context of 7 concurrent LLM agents deliberating.
+
+## 🤖 Agent Reputation (Trust Scores)
+
+For each agent with score data, explain what their score means in plain English. Flag any agent whose score is below 0.8 as "potentially compromised".
+
+## 🔍 Notable Events
+
+Highlight any audit log events that seem interesting — high-risk blocked actions, REJECT decisions, patterns.
+
+## ✅ Verdict
+
+A final 1-2 sentence verdict: Is this system operating normally? Are there concerns?
+
+Be concise, warm, and professional. Use markdown formatting. Never output raw CSV. Address the user in second person ("Your system...", "You had...").
+"""
+
+@router.post("/session/explain")
+async def explain_session(file: UploadFile = File(...)):
+    """
+    Accepts a ByzantineMind session CSV file and returns an AI-generated
+    human-friendly explanation of the session data using Groq Llama 3.3.
+    """
+    groq_key = os.getenv("GROQ_API_KEY")
+    if not groq_key:
+        raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured")
+
+    if not file.filename or not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Please upload a valid .csv file")
+
+    contents = await file.read()
+    csv_text = contents.decode("utf-8", errors="replace")
+
+    # Limit input size to avoid token overflow
+    if len(csv_text) > 12000:
+        csv_text = csv_text[:12000] + "\n... (truncated)"
+
+    user_message = f"Here is my ByzantineMind session report. Please analyze it and give me a friendly explanation:\n\n```csv\n{csv_text}\n```"
+
+    try:
+        async with _httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {groq_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": EXPLAIN_SYSTEM_PROMPT},
+                        {"role": "user", "content": user_message},
+                    ],
+                    "temperature": 0.5,
+                    "max_tokens": 1500,
+                }
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            explanation = data["choices"][0]["message"]["content"]
+            return {"explanation": explanation}
+    except Exception as e:
+        logger.error(f"Explain session error: {e}")
+        raise HTTPException(status_code=500, detail=f"AI explanation error: {str(e)}")
 
 
 # ── AI Chatbot ────────────────────────────────────────────────────
 import os
 import httpx as _httpx
 
-CHATBOT_SYSTEM_PROMPT = """You are the ByzantineMind AI Assistant — an expert on Byzantine Fault Tolerance, AI safety, and the ByzantineMind consensus platform.
+CHATBOT_SYSTEM_PROMPT = """You are the **ByzantineMind AI Assistant** — an expert on Byzantine Fault Tolerance, AI safety, distributed consensus, and the ByzantineMind platform.
 
 **About ByzantineMind:**
-- It's a PBFT (Practical Byzantine Fault Tolerance) consensus system for AI agents.
-- It routes every action through 4 independent LLM agents (Mistral, Groq/Llama, DeepSeek, Cerebras).
-- Requires a 2f+1 quorum (3 out of 4) to finalize any decision.
-- Even if 1 agent is fully compromised (Byzantine fault), the remaining 3 outvote it.
-- ArmorIQ is the security layer: Intent Engine classifies operations, Gatekeeper authorizes agents, Sentry detects consensus drift, Auditor logs everything to SQLite.
-- The system has a Governance Policy Engine for dynamic quorum rules and human-in-the-loop escalation.
-- Ed25519 cryptographic certificates are issued for every consensus decision.
+- A production-grade PBFT (Practical Byzantine Fault Tolerance) consensus engine for AI agents.
+- Routes every action through **7 independent, heterogeneous LLM agents** from 4+ providers:
+  • agent_1: Mistral Large (Mistral AI, France)
+  • agent_2: Groq Llama 3.3 70B (Meta, dense transformer)
+  • agent_3: Groq Qwen3 32B (Alibaba, MoE architecture)
+  • agent_4: Gemini 2.0 Flash (Google DeepMind)
+  • agent_5: OpenRouter Phi-4 (Microsoft Research)
+  • agent_6: Gemini 2.0 Flash (Google DeepMind)
+  • agent_7: Cerebras Llama 8B (Meta, ultra-fast inference)
+- **Rate-limit resilience**: If OPENROUTER_API_KEY is configured, automatically switches to Gemma 2, DeepSeek R1, Phi-4, and Falcon 3 for maximum diversity.
+- With n=7, f=2: tolerates **2 simultaneous Byzantine faults**. Quorum = 2f+1 = 5.
+- Uses a full 3-phase PBFT commit protocol: Pre-Prepare → Prepare → Commit.
+- **View Change Protocol**: If the primary agent crashes or times out, the engine automatically rotates to the next primary (view_number increments), ensuring **liveness**.
+- **ArmorIQ Security Layer**: 4 sub-systems:
+  1. Intent Engine — classifies operation risk (LOW/MEDIUM/HIGH/CRITICAL)
+  2. Gatekeeper — authorizes agents and enforces policies
+  3. Sentry — detects consensus drift and equivocation
+  4. Auditor — immutable SQLite audit trail with certificate hashes
+- **Governance Policy Engine**: YAML-based dynamic quorum rules, operation blocklists, human-in-the-loop escalation.
+- **Trust & Reputation System**: Per-agent trust scores that decay based on disagreement. Agents that historically disagree with consensus lose influence.
+- **Ed25519 Cryptographic Certificates**: Every consensus decision is cryptographically signed by a quorum of agents — verifiable and tamper-proof.
+- **Attack Simulator**: Interactive scenarios — Compromised Agent, Crash Recovery, Collusion Attack, Primary Failure (View Change), and f=2 Double Failure.
+
+**Your Capabilities:**
+- Explain any PBFT concept (safety, liveness, view changes, quorum math).
+- Guide users through the dashboard features and how to use them.
+- Analyze consensus outcomes and explain why agents voted a certain way.
+- Discuss the trust scores of individual agents and what they mean.
+- Explain attack scenarios and how the system defends against them.
+- Compare ByzantineMind to other consensus protocols (Raft, Paxos, Tendermint, HotStuff).
 
 **Your Personality:**
-- You are helpful, technically precise, and enthusiastic about AI safety.
-- Keep answers concise but informative. Use bullet points.
-- If asked about something unrelated, politely redirect to ByzantineMind topics.
-- You can explain PBFT theory, guide users through the dashboard, and analyze consensus outcomes.
+- Technically precise, enthusiastic about AI safety, and concise.
+- Use **markdown** formatting — bold, bullet points, code blocks — to make answers scannable.
+- When explaining math, use clear notation (e.g., n ≥ 3f+1).
+- If the user asks something vague, suggest specific things they can explore.
 
-**Current System State (injected at query time):**
+**Current Live System State:**
 {system_context}
 """
 
@@ -439,17 +568,25 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 async def chat_with_bot(req: ChatRequest):
-    """AI chatbot powered by Groq Llama 3.3."""
+    """AI chatbot powered by Groq Llama 3.3 — context-aware with live system state."""
     groq_key = os.getenv("GROQ_API_KEY")
     if not groq_key:
         raise HTTPException(status_code=500, detail="GROQ_API_KEY not configured")
 
-    # Build dynamic system context
+    # Build rich dynamic system context
     avg_lat = 0
     if analytics_data["latency_ms_history"]:
         avg_lat = int(sum(analytics_data["latency_ms_history"]) / len(analytics_data["latency_ms_history"]))
     
+    # Gather trust scores
+    trust_summary = []
+    for aid, data in trust_engine.scores.items():
+        score = data.get("score", 1.0)
+        trust_summary.append(f"  {aid}: {score:.2f} (agreements={data.get('agreements', 0)}, disagreements={data.get('disagreements', 0)})")
+    trust_block = "\n".join(trust_summary) if trust_summary else "  No trust data yet (no consensus rounds completed)."
+
     context = f"""
+- Configuration: n={N_AGENTS} agents, f={F_FAULTS} faults tolerated, quorum={2*F_FAULTS+1}
 - Total queries this session: {analytics_data['total_queries']}
 - Consensus reached: {analytics_data['total_consensus_reached']}
 - Guardrail blocks: {analytics_data['total_blocked_guardrail']}
@@ -458,6 +595,8 @@ async def chat_with_bot(req: ChatRequest):
 - Active agents: {[a.agent_id for a in agents]}
 - Active faults: {injector.get_active_faults()}
 - Active policies: {[p.get('id') for p in policy_engine.get_all_policies()]}
+- Agent Trust Scores:
+{trust_block}
 """
     system_msg = CHATBOT_SYSTEM_PROMPT.replace("{system_context}", context)
 
@@ -481,7 +620,7 @@ async def chat_with_bot(req: ChatRequest):
                     "model": "llama-3.3-70b-versatile",
                     "messages": messages,
                     "temperature": 0.7,
-                    "max_tokens": 1024,
+                    "max_tokens": 2048,
                 }
             )
             resp.raise_for_status()
@@ -491,3 +630,4 @@ async def chat_with_bot(req: ChatRequest):
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=f"Chatbot error: {str(e)}")
+

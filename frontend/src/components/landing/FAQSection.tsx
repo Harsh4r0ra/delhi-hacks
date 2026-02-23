@@ -10,41 +10,41 @@ import {
 const faqs = [
   {
     q: "What is Byzantine Fault Tolerance (BFT)?",
-    a: "BFT is a property of distributed systems that guarantees correct operation even when up to f out of 3f+1 participants are faulty, malicious, or compromised. ByzantineMind applies this mathematical framework to AI agent consensus.",
+    a: "BFT is a property of distributed systems that guarantees correct operation even when nodes fail or act maliciously. ByzantineMind applies this mathematical framework to multi-agent AI ecosystems.",
   },
   {
     q: "How many faulty agents can the system tolerate?",
-    a: "With 4 agents, the system tolerates 1 faulty agent. The formula is f = ⌊(n-1)/3⌋, meaning one-third of agents can be Byzantine (lying, crashed, or colluding) and consensus still holds.",
+    a: "Our core PBFT engine runs on an n=7 node architecture, tolerating f=2 faulty agents. The formula is f = ⌊(n-1)/3⌋, meaning even if 2 out of 7 agents hallucinate, lie, or crash, consensus mathematically holds.",
   },
   {
     q: "What AI models do the agents use?",
-    a: "ByzantineMind supports heterogeneous agent pools. Current agents use GPT-4, Claude-3, Mistral-7B, and a custom SimulatedAgent — ensuring diverse reasoning paths and eliminating single-model vulnerabilities.",
+    a: "ByzantineMind supports heterogeneous open-weights agent pools. Currently, the primary replicas run a mix of Llama 3.3, Qwen 3, Mistral, and Phi-4 to ensure diverse reasoning paths and eliminate single-model bias.",
   },
   {
     q: "How are decisions cryptographically verified?",
-    a: "Every agent signs their vote with Ed25519 digital signatures. Once quorum is reached, votes are hash-chained into an immutable consensus certificate that can be independently verified.",
+    a: "Every agent signs their independent vote using Ed25519 digital signatures. Once a 2f+1 quorum (5 nodes) is reached, votes are hash-chained into an immutable, locally verifiable consensus certificate.",
   },
   {
     q: "Can I inject faults to test resilience?",
-    a: "Yes. The Fault Injection Console lets you crash agents, inject Byzantine behavior (lying), or attempt collusion attacks in real-time. The platform demonstrates mathematically that consensus holds.",
+    a: "Yes. The Interactive Threat Simulation dashboard lets you crash agents, force Byzantine behaviors, or trigger sybil attacks in real-time to watch the PBFT network self-heal live.",
+  },
+  {
+    q: "What is ArmorIQ?",
+    a: "ArmorIQ is our proprietary pre-execution guardrail. It sits in front of the PBFT consensus layer to parse intent, classify risk severity, and filter out obvious malicious inputs before deliberation begins.",
   },
   {
     q: "How fast is the consensus cycle?",
-    a: "A full consensus round — from intent submission through agent deliberation to quorum seal — completes in under 3 seconds. The system runs 24/7 with 99.99% uptime.",
-  },
-  {
-    q: "How do I integrate ByzantineMind into my stack?",
-    a: "ByzantineMind offers a REST API, WebSocket streams for real-time consensus monitoring, and SDKs for Python, TypeScript, and Go. Most integrations complete in hours.",
+    a: "Even with 7 concurrent LLM agents evaluating proposals, a complete consensus round — from proposition to quorum seal — completes in under a second.",
   },
   {
     q: "Is the consensus log tamper-proof?",
-    a: "Yes. Each consensus certificate is hash-chained to the previous one, creating an immutable audit log. Any tampering breaks the chain and is instantly detectable.",
+    a: "Yes. Every executed action is written to an immutable, cryptographically hash-chained audit ledger, making retroactive tampering mathematically impossible.",
   },
 ];
 
 export default function FAQSection() {
   return (
-    <section className="relative py-24 sm:py-32">
+    <section className="relative py-8 sm:py-16">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

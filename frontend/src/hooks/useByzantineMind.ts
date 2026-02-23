@@ -161,10 +161,15 @@ export function useByzantineMind() {
 
     // ── Actions ──────────────────────────────────────────────────────────────
     const submitQuery = useCallback(
-        async (operation: string, target: string, description?: string) => {
+        async (operation: string, target: string, description?: string, strict_mode?: boolean) => {
             setIsQuerying(true);
             try {
-                const response = await api.submitQuery({ operation, target, description: description ?? "" });
+                const response = await api.submitQuery({
+                    operation,
+                    target,
+                    description: description ?? "",
+                    strict_mode: strict_mode ?? true,
+                });
                 setLastQueryResponse(response);
                 setIntent(response.intent ?? null);
                 if (response.certificate) {

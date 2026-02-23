@@ -8,7 +8,7 @@ from backend.agents.base import BaseAgent, SYSTEM_PROMPT, build_task_prompt
 class CerebrasAgent(BaseAgent):
     """Agent powered by Cerebras ultra-fast inference API (Llama 3.3 70B)."""
 
-    def __init__(self, agent_id: str, model: str = "llama-3.3-70b"):
+    def __init__(self, agent_id: str, model: str = "llama3.1-8b"):
         super().__init__(agent_id)
         self.api_key = os.getenv("CEREBRAS_API_KEY")
         if not self.api_key:

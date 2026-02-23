@@ -9,7 +9,7 @@ const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://loc
 
 export interface AgentStatus {
     agent_id: string;
-    model_id: string;
+    model_id: string; // display label e.g. "Groq (llama-3.3-70b-versatile)"
     status: "ONLINE" | "FAULTY" | "CRASHED";
     last_active: string | null;
     successful_participations: number;
@@ -46,15 +46,29 @@ export interface IntentDeclaration {
     created_at: string;
 }
 
+export interface AgentDetail {
+    decision: "APPROVE" | "REJECT";
+    reason_code: "SAFE" | "INVALID_REQUEST" | "UNSAFE_OR_UNKNOWN";
+    confidence: number;
+}
+
 export interface QueryResponse {
     status: "CONSENSUS_REACHED" | "NO_CONSENSUS" | "BLOCKED";
     reason?: string;
     intent: IntentDeclaration;
+    guardrail_bypassed?: boolean;
+    policy?: {
+        policy_id: string;
+        required_quorum: number;
+        escalate_to_human: boolean;
+        description: string;
+    };
     consensus: {
         decision: "APPROVE" | "REJECT";
         agent_decisions: Record<string, "APPROVE" | "REJECT">;
         agent_errors: Record<string, string>;
         sequence_number: number;
+        agent_details?: Record<string, AgentDetail>;
     } | null;
     certificate: ConsensusCert | null;
     sentry_valid: boolean;
@@ -79,6 +93,8 @@ export interface ConfigResponse {
     n_agents: number;
     quorum_size: number;
     active_faults: Record<string, string>;
+    // Runtime info — the frontend polls /api/agents for this
+    agent_model_labels?: Record<string, string>;
 }
 
 // ── Client ─────────────────────────────────────────────────────────────────
@@ -99,8 +115,21 @@ export const api = {
     getAgents: () => req<AgentsResponse>("/api/agents"),
     getConfig: () => req<ConfigResponse>("/api/config"),
     getHistory: (limit = 50) => req<{ history: AuditEntry[]; count: number }>(`/api/history?limit=${limit}`),
+    getTrustScores: () => req<any>("/api/trust"),
+    getAnalytics: () => req<any>("/api/analytics"),
+    getPolicies: () => req<{ policies: any[] }>("/api/policy"),
+    updatePolicies: (yaml_content: string) => req<{ status: string; policies: any[] }>("/api/policy", {
+        method: "POST",
+        body: JSON.stringify({ yaml_content })
+    }),
+    runScenario: (scenario_name: string) => req<any>(`/api/scenarios/${scenario_name}`, { method: "POST" }),
 
-    submitQuery: (body: { operation: string; target: string; description?: string }) =>
+    sendChat: (message: string, history: Array<{ role: string; content: string }>) =>
+        req<{ reply: string }>("/api/chat", { method: "POST", body: JSON.stringify({ message, history }) }),
+
+    exportSession: () => `${BASE}/api/session/export`,
+
+    submitQuery: (body: { operation: string; target: string; description?: string; strict_mode?: boolean }) =>
         req<QueryResponse>("/api/query", { method: "POST", body: JSON.stringify(body) }),
 
     injectFault: (agent_id: string, fault_type: string, malicious_decision = "APPROVE") =>

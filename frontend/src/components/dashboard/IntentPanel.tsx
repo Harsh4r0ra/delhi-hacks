@@ -1,4 +1,4 @@
-import { ShieldCheck, ShieldAlert, Eye } from "lucide-react";
+import { ShieldCheck, ShieldAlert, ShieldOff, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { IntentDeclaration, QueryResponse } from "@/lib/api";
 
@@ -31,6 +31,7 @@ export default function IntentPanel({ intent, lastResponse }: Props) {
 
   const risk = riskConfig[intent?.risk_level ?? "UNKNOWN"];
   const guardrailPassed = lastResponse?.status !== "BLOCKED";
+  const guardrailBypassed = lastResponse?.guardrail_bypassed === true;
   const sentryValid = lastResponse?.sentry_valid ?? true;
 
   return (
@@ -65,16 +66,30 @@ export default function IntentPanel({ intent, lastResponse }: Props) {
       {/* Guardrail */}
       <div className="glass-card flex items-center justify-between p-4">
         <span className="text-xs font-semibold text-muted-foreground">Guardrail</span>
-        {guardrailPassed ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
-            <ShieldCheck className="h-4 w-4" /> Passed
-          </span>
-        ) : (
+        {!guardrailPassed ? (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-destructive">
             <ShieldAlert className="h-4 w-4" /> Blocked
           </span>
+        ) : guardrailBypassed ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-400">
+            <ShieldOff className="h-4 w-4" /> Bypassed → Consensus
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+            <ShieldCheck className="h-4 w-4" /> Passed
+          </span>
         )}
       </div>
+
+      {/* Guardrail bypass warning banner */}
+      {guardrailBypassed && (
+        <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-4 py-3">
+          <p className="text-xs font-semibold text-amber-400">⚡ Guardrail bypassed</p>
+          <p className="mt-0.5 text-[10px] text-amber-400/70">
+            Operation was flagged CRITICAL but passed to consensus agents. The agents made the final call.
+          </p>
+        </div>
+      )}
 
       {/* Sentry */}
       <div className="glass-card flex items-center justify-between p-4">

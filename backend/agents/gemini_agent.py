@@ -8,7 +8,7 @@ from backend.agents.base import BaseAgent, SYSTEM_PROMPT, build_task_prompt
 class GeminiAgent(BaseAgent):
     """Agent powered by Google Gemini API (gemini-2.0-flash)."""
 
-    def __init__(self, agent_id: str, model: str = "gemini-2.0-flash"):
+    def __init__(self, agent_id: str, model: str = "gemini-2.0-flash-exp"):
         super().__init__(agent_id)
         self.api_key = os.getenv("GEMINI_API_KEY")
         if not self.api_key:

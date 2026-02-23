@@ -12,7 +12,7 @@ from backend.agents.base import BaseAgent
 from backend.agents.simulated_agent import SimulatedAgent
 from backend.agents.mistral_agent import MistralAgent
 from backend.agents.groq_agent import GroqAgent
-from backend.agents.gemini_agent import GeminiAgent
+from backend.agents.deepseek_agent import DeepSeekAgent
 from backend.agents.cerebras_agent import CerebrasAgent
 
 logger = logging.getLogger("byzantinemind.factory")
@@ -33,7 +33,7 @@ def create_agents(mode: str) -> List[BaseAgent]:
         agents = [
             MistralAgent("agent_1"),
             GroqAgent("agent_2"),
-            GeminiAgent("agent_3"),
+            DeepSeekAgent("agent_3"),
             CerebrasAgent("agent_4"),
         ]
         logger.info("All 4 LLM agents initialized successfully.")

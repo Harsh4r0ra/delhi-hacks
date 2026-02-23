@@ -46,17 +46,42 @@ class IntentEngine:
         )
 
     @staticmethod
-    def apply_pre_execution_guardrails(intent: IntentDeclaration) -> bool:
+    def apply_pre_execution_guardrails(intent: IntentDeclaration, strict: bool = True) -> tuple:
         """
-        Hard block on certain extremely dangerous intents before they even reach agents.
-        Returns True if allowed to proceed, False if blocked.
+        Two-mode guardrail system.
+
+        Args:
+            intent: The declared intent to evaluate.
+            strict: If True (default), hard-block dangerous operations before they reach agents.
+                    If False (Consensus Mode), log a warning and allow PBFT to decide.
+
+        Returns:
+            (allowed: bool, guardrail_bypassed: bool)
         """
-        # Ensure we're using the calculated risk level
+        import logging
+        _logger = logging.getLogger(__name__)
+
         if intent.risk_level == "UNKNOWN":
             intent.risk_level = IntentEngine.classify_risk(intent.action_type, intent.target)
-            
-        if intent.risk_level == "CRITICAL" and "PRODUCTION" in intent.target.upper():
-            # Example hard guardrail: never delete production directly via agent
-            return False
-            
-        return True
+
+        is_critical_production = (
+            intent.risk_level == "CRITICAL" and "PRODUCTION" in intent.target.upper()
+        )
+
+        if is_critical_production:
+            if strict:
+                # 🛡️ First Shield: ArmorIQ hard-blocks before agents are invoked
+                _logger.warning(
+                    f"[GUARDRAIL:STRICT] Blocked {intent.action_type} on {intent.target} "
+                    f"(risk={intent.risk_level})"
+                )
+                return False, False
+            else:
+                # ⚡ Second Shield: Log warning, hand off to PBFT consensus
+                _logger.warning(
+                    f"[GUARDRAIL:BYPASSED] {intent.action_type} on {intent.target} "
+                    f"(risk={intent.risk_level}) — passing to consensus agents"
+                )
+                return True, True  # allowed=True, guardrail_bypassed=True
+
+        return True, False
